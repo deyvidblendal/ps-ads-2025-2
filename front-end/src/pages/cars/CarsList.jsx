@@ -10,6 +10,8 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import AddCircleIcon from '@mui/icons-material/AddCircle'
 
+import fetchAuth from '../../lib/fetchAuth'
+
 import { feedbackWait, feedbackConfirm, feedbackNotify } from '../../ui/Feedback'
 
 export default function CarsList() {
@@ -109,22 +111,23 @@ export default function CarsList() {
   // Função que é chamada pelo useEffect() para carregar os dados
   // do back-end quando o componente for exibido
   async function loadData() {
-    feedbackWait(true)
-    try {
-      const response = await fetch(import.meta.env.VITE_API_BASE + '/cars')
-      const data = await response.json()
+   feedbackWait(true)
+   try {
+     const data = await fetchAuth.get('/cars')
 
-      // Atualiza a variável de estado com os dados obtidos
-      setState({ ...state, cars: data })
-    }
-    catch(error) {
-      console.error(error)
-      feedbackNotify(error.message, 'error')
-    }
-    finally {
-      feedbackWait(false)
-    }
-  }
+
+     // Atualiza a variável de estado com os dados obtidos
+     setState({ ...state, cars: data })
+   }
+   catch(error) {
+     console.error(error)
+     feedbackNotify(error.message, 'error')
+   }
+   finally {
+     feedbackWait(false)
+   }
+ }
+
 
   // useEffect() que será executado apenas quando o componente for carregado
   React.useEffect(() => {
@@ -132,26 +135,26 @@ export default function CarsList() {
   }, [])
 
   async function handleDeleteButtonClick(id) {
-    if(await feedbackConfirm('Deseja realmente excluir este item?')) {
-      feedbackWait(true)
-      try {
-        // Envia a requisição para a exclusão do registro
-        await fetch(import.meta.env.VITE_API_BASE + `/cars/${id}`,
-          { method: 'DELETE' }
-        )
-        // Atualiza os dados do datagrid
-        loadData()
-        feedbackNotify('Exclusão efetuada com sucesso.')
-      }
-      catch(error) {
-        console.error(error)
-        feedbackNotify('ERRO: ' + error.message, 'error')
-      }
-      finally {
-        feedbackWait(false)
-      }
-    }
-  }
+   if(await feedbackConfirm('Deseja realmente excluir este item?')) {
+     feedbackWait(true)
+     try {
+       // Envia a requisição para a exclusão do registro
+       await fetchAuth.delete(`/cars/${id}`)
+      
+       // Atualiza os dados do datagrid
+       loadData()
+       feedbackNotify('Exclusão efetuada com sucesso.')
+     }
+     catch(error) {
+       console.error(error)
+       feedbackNotify('ERRO: ' + error.message, 'error')
+     }
+     finally {
+       feedbackWait(false)
+     }
+   }
+ }
+
 
   return <>
     <Typography variant="h1" gutterBottom>
