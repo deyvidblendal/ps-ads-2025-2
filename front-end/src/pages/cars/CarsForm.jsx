@@ -15,6 +15,9 @@ import { Checkbox, FormControlLabel } from '@mui/material'
 
 import fetchAuth from '../../lib/fetchAuth'
 
+import Car from '../../models/Car' 
+import { ZodError } from 'zod'
+
 export default function CarsForm() {
 
   const carsColor = [
@@ -71,11 +74,13 @@ export default function CarsForm() {
   // Variáveis de estado
   const [state, setState] = React.useState({
     car: { ...formDefaults },
-    formModified: false
+    formModified: false,
+    inputErrors: {}
   })
   const {
     car,
-    formModified
+    formModified,
+    inputErrors
   } = state
 
   // Se estivermos editando um cliente, precisamos buscar os seus dados
@@ -125,6 +130,8 @@ export default function CarsForm() {
     event.preventDefault()    // Impede o recarregamento da página
     feedbackWait(true)
     try {
+      // 1. Invoca a validação do Zod para CARROS
+      Car.parse(car)
 
       // Se houver parâmetro na rota, significa que estamos alterando
       // um registro existente. Portanto, fetch() precisa ser chamado
@@ -144,7 +151,18 @@ export default function CarsForm() {
     }
     catch(error) {
       console.error(error)
-      feedbackNotify('ERRO: ' + error.message, 'error')
+      // 2. Em caso de erro do Zod, preenchemos a variável de estado inputErrors
+        if (error instanceof ZodError) {
+            const errorMessages = {}
+            // Percorre os erros do Zod e monta um objeto { campo: "mensagem" }
+            for (let i of error.issues) errorMessages[i.path[0]] = i.message
+            
+            // Atualiza o estado com os erros encontrados
+            setState({ ...state, inputErrors: errorMessages })
+            
+            notify('Há campos com valores inválidos. Verifique.', 'error')
+        }
+        else feedbackNotify('ERRO: ' + error.message, 'error')
     }
     finally {
       feedbackWait(false)
@@ -179,6 +197,8 @@ export default function CarsForm() {
           autoFocus
           value={car.brand}
           onChange={handleFieldChange}
+          error={inputErrors?.brand}
+          helperText={inputErrors?.brand}
         />
 
         <div className="MuiFormControl-root">
@@ -204,6 +224,8 @@ export default function CarsForm() {
           required
           value={car.model}
           onChange={handleFieldChange}
+          error={inputErrors?.model}
+          helperText={inputErrors?.model}
         />
 
         <TextField
@@ -215,6 +237,8 @@ export default function CarsForm() {
           required
           value={car.plates}
           onChange={handleFieldChange}
+          error={inputErrors?.plates}
+          helperText={inputErrors?.plates}
         />
 
         <TextField
@@ -226,6 +250,8 @@ export default function CarsForm() {
           value={car.color}
           select
           onChange={handleFieldChange}
+          error={inputErrors?.color}
+          helperText={inputErrors?.color}
         >
           {
             carsColor.map(c => 
@@ -250,6 +276,8 @@ export default function CarsForm() {
               handleFieldChange(e);
             }
           }}
+          error={inputErrors?.selling_price}
+          helperText={inputErrors?.selling_price}
         />
 
         <TextField
@@ -261,6 +289,8 @@ export default function CarsForm() {
           value={car.year_manufacture}
           select
           onChange={handleFieldChange}
+          error={inputErrors?.year_manufacture}
+          helperText={inputErrors?.year_manufacture}
           >
             {
             years.map(y => 
@@ -286,7 +316,9 @@ export default function CarsForm() {
             slotProps={{
               textField: {
                 variant: "outlined",
-                fullWidth: true
+                fullWidth: true,
+                error: inputErrors?.selling_date,
+                helperText: inputErrors?.selling_date
               }
             }}
             onChange={ date => {

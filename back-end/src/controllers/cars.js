@@ -1,4 +1,6 @@
 import prisma from '../database/client.js'
+import Car from '../models/Car.js' // Importamos o model Car (adaptado de Customer)
+import { ZodError } from 'zod'     // Importamos o objeto de erro do Zod
 
 const controller = {}   // Objeto vazio
 
@@ -8,6 +10,12 @@ const controller = {}   // Objeto vazio
 // res ~> representa a resposta (response)
 controller.create = async function(req, res) {
   try {
+    // ADAPTAÇÃO: Convertemos a string da data de venda para objeto Date (se existir)
+    if(req.body.selling_date) req.body.selling_date = new Date(req.body.selling_date)
+
+    // ADAPTAÇÃO: Chamamos a validação do modelo Car
+    Car.parse(req.body)
+
     // Para a inserção no BD, os dados são enviados
     // dentro de um objeto chamado "body" que vem
     // dentro da requisição ("req")
@@ -21,6 +29,9 @@ controller.create = async function(req, res) {
   catch(error) {
     // Se algo de errado ocorrer, cairemos aqui
     console.error(error)  // Exibe o erro no terminal
+
+    // Tratamento de erro do Zod (igual ao da imagem)
+    if(error instanceof ZodError) res.status(422).send(error.issues)
 
     // Enviamos como resposta o código HTTP relativo
     // a erro interno do servidor
@@ -77,6 +88,12 @@ controller.retrieveOne = async function (req, res) {
 
 controller.update = async function(req, res) {
   try {
+    // ADAPTAÇÃO: Verifica se há data de venda para converter
+    if(req.body.selling_date) req.body.selling_date = new Date(req.body.selling_date)
+
+    // ADAPTAÇÃO: Valida os dados usando o model Car
+    Car.parse(req.body)
+
     // Busca o registro no banco de dados por seu id
     // e o atualiza com as informações que vieram em req.body
     await prisma.car.update({
@@ -93,6 +110,9 @@ controller.update = async function(req, res) {
 
     // Não encontrou e não atualizou ~> HTTP 404: Not Found
     if(error?.code === 'P2025') res.status(404).end()
+
+    // Tratamento de erro: Validação do Zod (422)
+    else if(error instanceof ZodError) res.status(422).send(error.issues)
 
     // Se não for erro de não encontrado, retorna o habitual
     // HTTP 500: Internal Server Error
