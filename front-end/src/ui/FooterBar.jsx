@@ -26,7 +26,7 @@ export default function FooterBar() {
         }}
       >
         Desenvolvido e mantido com <LocalCafeIcon fontSize="small" /> por <a 
-        href="mailto:professor@faustocintra.com.br">Prof. Fausto G. Cintra</a>
+        href="mailto:deyvid.rosa@fatec.sp.gov.br">Deyvid Blendal Conrado Rosa</a>
       </Typography>
     </Box>
   );
